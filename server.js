@@ -28,10 +28,10 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ status: 'OK', message: 'Kisan EMS API is running' });
 });
-
+//  ajcbjhc
 // Error handling
 app.use(notFound);
 app.use(errorHandler);
