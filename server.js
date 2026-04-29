@@ -9,26 +9,31 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
-
+  const fileUpload = require('express-fileupload');
 // Initialize express
-const app = express();
-
-// Connect to database
-connectDB();
+const app = express(); 
+  
+// Connect to database 
+connectDB(); 
 
 app.use(cors({
-  origin: ['https://kisan-mange-f.vercel.app'],
+  origin: ['http://localhost:3000'],
+  // origin: ['https://kisan-mange-f.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(morgan('dev'));
+
+// file upload
+app.use(fileUpload({
+  useTempFiles: true
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
-
+app.use('/api/documents', require('./routes/documentRoutes'));
 // Health check
 app.get('/api', (req, res) => {
   res.json({ status: 'OK', message: 'Kisan EMS API is running' });
