@@ -78,6 +78,15 @@ const employeeSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  bankName: {
+    type: String,
+  },
+  accountNo: {
+    type: String,
+  },
+  ifsc: {
+    type: String,
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

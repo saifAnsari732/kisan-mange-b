@@ -40,7 +40,10 @@ const seedData = async () => {
       officialEmailId: 'hr@kisangroup.com',
       address: 'Gomti Nagar, Lucknow, UP',
       salary: 80000,
-      userId: hrUser._id
+      userId: hrUser._id,
+      bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
     });
 
     // Create Sample Employees
@@ -61,7 +64,10 @@ const seedData = async () => {
         officialEmailId: 'priya.sharma@kisangroup.com',
         address: 'Hazratganj, Lucknow, UP',
         salary: 35000,
-        password: 'employee123'
+        password: 'employee123',
+         bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
       },
       {
         employeeId: 'KG003',
@@ -79,7 +85,10 @@ const seedData = async () => {
         officialEmailId: 'amit.verma@kisangroup.com',
         address: 'Indira Nagar, Lucknow, UP',
         salary: 65000,
-        password: 'employee123'
+        password: 'employee123',
+         bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
       },
       {
         employeeId: 'KG004',
@@ -97,7 +106,10 @@ const seedData = async () => {
         officialEmailId: 'sneha.gupta@kisangroup.com',
         address: 'Connaught Place, Delhi',
         salary: 55000,
-        password: 'employee123'
+        password: 'employee123',
+         bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
       },
       {
         employeeId: 'KG005',
@@ -115,7 +127,10 @@ const seedData = async () => {
         officialEmailId: 'rahul.singh@kisangroup.com',
         address: 'Aliganj, Lucknow, UP',
         salary: 40000,
-        password: 'employee123'
+        password: 'employee123',
+         bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
       },
       {
         employeeId: 'KG006',
@@ -133,7 +148,10 @@ const seedData = async () => {
         officialEmailId: 'anjali.yadav@kisangroup.com',
         address: 'Andheri, Mumbai, MH',
         salary: 42000,
-        password: 'employee123'
+        password: 'employee123',
+         bankName:'punjab national bank',
+      accountNo:'9567398639653',
+      ifsc:'bg8735'
       }
     ];
 

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
   const fileUpload = require('express-fileupload');
+  const reportRoutes = require('./routes/reportRoutes');
 // Initialize express
 const app = express(); 
   
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/documents', require('./routes/documentRoutes'));
+app.use('/api/reports', reportRoutes);
 // Health check
 app.get('/api', (req, res) => {
   res.json({ status: 'OK', message: 'Kisan EMS API is running' });
