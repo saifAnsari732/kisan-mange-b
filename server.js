@@ -25,11 +25,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// file upload
+// file upload 
 app.use(fileUpload({
   useTempFiles: true
 }));
-
+ 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);

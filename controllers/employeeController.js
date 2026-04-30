@@ -1,5 +1,6 @@
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const cloudinary = require('../config/cloudinary');
 
 // @desc    Get all employees (HR/Admin)
 // @route   GET /api/employees
@@ -69,6 +70,8 @@ const getMyProfile = async (req, res) => {
 // @desc    Create new employee (HR/Admin)
 // @route   POST /api/employees
 // @access  Private/Admin
+// controllers/employeeController.js
+
 const createEmployee = async (req, res) => {
   try {
     const {
@@ -87,68 +90,215 @@ const createEmployee = async (req, res) => {
       officialEmailId,
       address,
       salary,
-      password
+      password,
+      bankName,
+      accountNo,
+      ifsc
     } = req.body;
 
-    // Check if employee already exists
-    const employeeExists = await Employee.findOne({ employeeId });
-    if (employeeExists) {
+    // 1. Validate required fields
+    const requiredFields = ['employeeId', 'name', 'role', 'department', 'mobileNumber', 'emailId'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+
+    // 2. Check if employee already exists in Employee model
+    const existingEmployee = await Employee.findOne({ employeeId });
+    if (existingEmployee) {
       return res.status(400).json({ message: 'Employee ID already exists' });
     }
 
-    // Create user account
+    // 3. Check if employee already exists in User model
+    const existingUser = await User.findOne({ employeeId });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Employee ID already exists in user account' });
+    }
+
+    // 4. Check if email already exists
+    const existingEmail = await Employee.findOne({ emailId });
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email ID already exists' });
+    }
+
+    // 5. Create User account first
     const user = await User.create({
       employeeId,
-      password: password || 'password123', // Default password
-      role: 'employee'
+      password: password || 'password123',
+      role: 'employee',
+      name: name
     });
 
-    // Create employee
+    if (!user) {
+      return res.status(500).json({ message: 'Failed to create user account' });
+    }
+
+    // 6. Create Employee with userId reference
     const employee = await Employee.create({
       employeeId,
+      userId: user._id,
       name,
-      fatherName,
+      fatherName: fatherName || '',
       role,
       department,
-      headQuarter,
-      dateOfJoining,
-      dateOfBirth,
-      reportingManager,
-      cugNumber,
+      headQuarter: headQuarter || '',
+      dateOfJoining: dateOfJoining || null,
+      dateOfBirth: dateOfBirth || null,
+      reportingManager: reportingManager || '',
+      cugNumber: cugNumber || '',
       mobileNumber,
       emailId,
-      officialEmailId,
-      address,
-      salary,
-      userId: user._id
+      officialEmailId: officialEmailId || emailId,
+      address: address || '',
+      salary: salary || 0,
+      bankName: bankName || '',
+      accountNo: accountNo || '',
+      ifsc: ifsc || ''
     });
 
-    res.status(201).json(employee);
+    // 7. Return populated employee data
+    const populatedEmployee = await Employee.findById(employee._id)
+      .populate('userId', '-password');
+
+    res.status(201).json({
+      success: true,
+      message: 'Employee created successfully',
+      data: populatedEmployee
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Create employee error:', error);
+    
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        message: `${field} already exists. Please use a unique value.` 
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    
+    res.status(500).json({ 
+      message: error.message || 'Failed to create employee' 
+    });
   }
 };
-
 // @desc    Update employee (HR/Admin)
 // @route   PUT /api/employees/:id
 // @access  Private/Admin
 const updateEmployee = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    const { id } = req.params;
+    const updateData = req.body;
 
+    // Find existing employee
+    const employee = await Employee.findById(id);
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
 
-    const updatedEmployee = await Employee.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-userId');
+    // Check for duplicate employeeId (if trying to change)
+    if (updateData.employeeId && updateData.employeeId !== employee.employeeId) {
+      const existingEmployee = await Employee.findOne({ 
+        employeeId: updateData.employeeId,
+        _id: { $ne: id }
+      });
+      if (existingEmployee) {
+        return res.status(400).json({ message: 'Employee ID already exists' });
+      }
+    }
 
-    res.json(updatedEmployee);
+    // Check for duplicate email
+    if (updateData.emailId && updateData.emailId !== employee.emailId) {
+      const existingEmail = await Employee.findOne({
+        emailId: updateData.emailId,
+        _id: { $ne: id }
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'Email ID already exists' });
+      }
+    }
+
+    // Prepare update data - remove undefined values
+    const updateFields = {
+      employeeId: updateData.employeeId || employee.employeeId,
+      name: updateData.name || employee.name,
+      fatherName: updateData.fatherName !== undefined ? updateData.fatherName : employee.fatherName,
+      role: updateData.role || employee.role,
+      department: updateData.department || employee.department,
+      headQuarter: updateData.headQuarter !== undefined ? updateData.headQuarter : employee.headQuarter,
+      dateOfJoining: updateData.dateOfJoining || employee.dateOfJoining,
+      dateOfBirth: updateData.dateOfBirth || employee.dateOfBirth,
+      reportingManager: updateData.reportingManager !== undefined ? updateData.reportingManager : employee.reportingManager,
+      cugNumber: updateData.cugNumber !== undefined ? updateData.cugNumber : employee.cugNumber,
+      mobileNumber: updateData.mobileNumber || employee.mobileNumber,
+      emailId: updateData.emailId || employee.emailId,
+      officialEmailId: updateData.officialEmailId !== undefined ? updateData.officialEmailId : employee.officialEmailId,
+      address: updateData.address !== undefined ? updateData.address : employee.address,
+      salary: updateData.salary !== undefined ? updateData.salary : employee.salary,
+      bankName: updateData.bankName !== undefined ? updateData.bankName : employee.bankName,
+      accountNo: updateData.accountNo !== undefined ? updateData.accountNo : employee.accountNo,
+      ifsc: updateData.ifsc !== undefined ? updateData.ifsc : employee.ifsc
+    };
+
+    // Update employee
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      id,
+      updateFields,
+      { new: true, runValidators: true }
+    );
+
+    // Update corresponding User model
+    if (employee.userId) {
+      const userUpdateData = {
+        employeeId: updatedEmployee.employeeId,
+        name: updatedEmployee.name
+      };
+      
+      // Only update password if provided and not default
+      if (updateData.password && updateData.password !== 'password123' && updateData.password !== '') {
+        userUpdateData.password = updateData.password;
+      }
+      
+      await User.findByIdAndUpdate(
+        employee.userId,
+        userUpdateData,
+        { new: true }
+      );
+    }
+
+    // Return populated employee
+    const populatedEmployee = await Employee.findById(id)
+      .populate('userId', '-password');
+
+    res.json({
+      success: true,
+      message: 'Employee updated successfully',
+      data: populatedEmployee
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Update employee error:', error);
+    
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    
+    res.status(500).json({ message: error.message || 'Failed to update employee' });
   }
 };
 
@@ -157,26 +307,51 @@ const updateEmployee = async (req, res) => {
 // @access  Private
 const updateMyProfile = async (req, res) => {
   try {
-    const { address, mobileNumber } = req.body;
+    console.log("adjnfkasjdfn")
+    const { address, mobileNumber, bankName, accountNo, ifsc } = req.body;
 
     const employee = await Employee.findOne({ employeeId: req.user.employeeId });
 
     if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
+      return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Only allow updating specific fields
+    // ✅ text fields update
     if (address) employee.address = address;
     if (mobileNumber) employee.mobileNumber = mobileNumber;
+    if (bankName) employee.bankName = bankName;
+    if (accountNo) employee.accountNo = accountNo;
+    if (ifsc) employee.ifsc = ifsc;
+
+    // ✅ IMAGE UPLOAD
+    if (req.files && req.files.profileImage) {
+      const file = req.files.profileImage;
+
+      // ❌ old image delete (important)
+      if (employee.cloudinaryId) {
+        await cloudinary.uploader.destroy(employee.cloudinaryId);
+      }
+
+      // ✅ upload new image
+      const result = await cloudinary.uploader.upload(file.tempFilePath, {
+        folder: "employee_profiles",
+        width: 300,
+        crop: "scale"
+      });
+
+      employee.profileImage = result.secure_url;
+      employee.cloudinaryId = result.public_id;
+    }
 
     await employee.save();
 
     res.json(employee);
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // @desc    Delete employee (HR/Admin)
 // @route   DELETE /api/employees/:id
 // @access  Private/Admin
@@ -226,6 +401,8 @@ const getDepartmentStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 module.exports = {
   getAllEmployees,

@@ -14,7 +14,7 @@ const { protect, adminOnly } = require('../middleware/auth');
 
 // Public routes (protected)
 router.get('/me/profile', protect, getMyProfile);
-router.put('/me/profile', protect, updateMyProfile);
+router.put('/me/profile',protect, updateMyProfile);
 
 // Admin routes
 router.get('/', protect, adminOnly, getAllEmployees);
