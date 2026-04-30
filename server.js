@@ -19,7 +19,7 @@ connectDB();
 
 app.use(cors({
   // origin: ['http://localhost:3000'],
-  origin: ['https://kisan-mange-f.vercel.app'],
+  origin: ['https://kisan-manage-f.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
