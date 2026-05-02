@@ -1,7 +1,7 @@
 const cloudinary = require('../config/cloudinary');
 const Document = require('../models/Document');
 
-// ✅ Upload multiple documents (max 6)
+// ✅Upload multiple documents (max 6)
 const uploadDocuments = async (req, res) => {
   try {
     if (!req.files || !req.files.files) {
@@ -19,17 +19,56 @@ const uploadDocuments = async (req, res) => {
     }
 
     const uploadedDocs = [];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
 
     for (let file of files) {
-      const result = await cloudinary.uploader.upload(file.tempFilePath, {
-        folder: 'employee_documents'
-      });
+      // Validate file type
+      if (!allowedTypes.includes(file.mimetype)) {
+        return res.status(400).json({ 
+          message: `Invalid file type: ${file.name}. Only images (JPEG, PNG, WEBP) and PDFs are allowed.` 
+        });
+      }
+
+      // Validate file size
+      if (file.size > maxSize) {
+        return res.status(400).json({ 
+          message: `File too large: ${file.name}. Maximum size is 5MB.` 
+        });
+      }
+
+      let result;
+      
+      // Handle different file types
+      if (file.mimetype === 'application/pdf') {
+        // Upload PDF to Cloudinary as raw file
+        result = await cloudinary.uploader.upload(file.tempFilePath, {
+          folder: 'employee_documents',
+          resource_type: 'raw',
+          format: 'pdf',
+          flags: 'attachment',
+          access_mode: 'public'
+        });
+      } else {
+        // Upload images
+        result = await cloudinary.uploader.upload(file.tempFilePath, {
+          folder: 'employee_documents',
+          resource_type: 'image',
+          transformation: [
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' }
+          ]
+        });
+      }
 
       const doc = await Document.create({
         employeeId: req.user.employeeId,
         name: file.name,
         url: result.secure_url,
-        public_id: result.public_id
+        public_id: result.public_id,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        resourceType: file.mimetype === 'application/pdf' ? 'raw' : 'image'
       });
 
       uploadedDocs.push(doc);
@@ -41,11 +80,12 @@ const uploadDocuments = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// ✅ Get my documents
+// ✅Get my documents
 const getMyDocuments = async (req, res) => {
   try {
     const docs = await Document.find({
@@ -58,7 +98,7 @@ const getMyDocuments = async (req, res) => {
   }
 };
 
-// ✅ Delete document
+// ✅Delete document
 const deleteDocument = async (req, res) => {
   try {
     const doc = await Document.findById(req.params.id);

@@ -35,7 +35,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/documents', require('./routes/documentRoutes'));
-app.use('/api/reports', reportRoutes);
+app.use('/api/hr', require('./routes/hrRouts'));
+
+
 // Health check
 app.get('/api', (req, res) => {
   res.json({ status: 'OK', message: 'Kisan EMS API is running' });
