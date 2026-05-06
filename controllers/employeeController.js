@@ -93,7 +93,9 @@ const createEmployee = async (req, res) => {
       password,
       bankName,
       accountNo,
-      ifsc
+      ifsc,
+      adharNo,
+      panNo
     } = req.body;
 
     // 1. Validate required fields
@@ -156,7 +158,9 @@ const createEmployee = async (req, res) => {
       salary: salary || 0,
       bankName: bankName || '',
       accountNo: accountNo || '',
-      ifsc: ifsc || ''
+      ifsc: ifsc || '',
+      adharNo: adharNo || '',
+      panNo: panNo || '',
     });
 
     // 7. Return populated employee data
@@ -246,7 +250,9 @@ const updateEmployee = async (req, res) => {
       salary: updateData.salary !== undefined ? updateData.salary : employee.salary,
       bankName: updateData.bankName !== undefined ? updateData.bankName : employee.bankName,
       accountNo: updateData.accountNo !== undefined ? updateData.accountNo : employee.accountNo,
-      ifsc: updateData.ifsc !== undefined ? updateData.ifsc : employee.ifsc
+      ifsc: updateData.ifsc !== undefined ? updateData.ifsc : employee.ifsc,
+      adharNo: updateData.adharNo !== undefined ? updateData.adharNo : employee.adharNo,
+      panNo: updateData.panNo !== undefined ? updateData.panNo : employee.panNo
     };
 
     // Update employee

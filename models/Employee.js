@@ -87,6 +87,12 @@ const employeeSchema = new mongoose.Schema({
   ifsc: {
     type: String,
   },
+  adharNo: {
+    type: String,
+  },
+  panNo: {
+    type: String,
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
