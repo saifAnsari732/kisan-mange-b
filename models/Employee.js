@@ -25,7 +25,7 @@ const employeeSchema = new mongoose.Schema({
   department: {
     type: String,
     // required: true,
-    enum: ['Sales', 'Marketing', 'Developer', 'Graphic Designer', 'Editor']
+    // enum: ['Sales', 'Marketing', 'Developer', 'Graphic Designer', 'Editor']
   },
   headQuarter: {
     type: String,
